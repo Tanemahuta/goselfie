@@ -31,7 +31,7 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.sum
       - name: Scan reachable Go code for known vulnerabilities
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 
   licenses:
     name: Dependency licenses
