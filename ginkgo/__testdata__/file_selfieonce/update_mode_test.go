@@ -1,0 +1,2 @@
+// selfieonce
+package example

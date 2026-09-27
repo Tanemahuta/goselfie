@@ -1,0 +1,59 @@
+name: dependency quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.repository_id }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  vulnerabilities:
+    name: Go vulnerability scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Scan reachable Go code for known vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+
+  licenses:
+    name: Dependency licenses
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Reject forbidden or unknown dependency licenses
+        run: go run github.com/google/go-licenses/v2@v2.0.1 check --include_tests ./...
+      - name: Add license inventory to the job summary
+        shell: bash
+        run: |
+          {
+            echo '### Third-party license inventory'
+            echo
+            echo '```csv'
+            go run github.com/google/go-licenses/v2@v2.0.1 report --include_tests ./...
+            echo '```'
+          } >>"${GITHUB_STEP_SUMMARY}"
