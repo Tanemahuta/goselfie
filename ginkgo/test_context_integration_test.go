@@ -13,6 +13,11 @@ import (
 var _ = Describe("CurrentTestContext", func() {
 	When("a context is requested from a Ginkgo spec", func() {
 		// SELFIEWRITE
+		BeforeEach(func() {
+			GinkgoT().Setenv(EnvCI, "false")
+			GinkgoT().Setenv(EnvUpdateSnapshots, "false")
+		})
+
 		It("reuses the file album and applies the container update mode", func() {
 			first, err := CurrentTestContext()
 			Expect(err).NotTo(HaveOccurred())
