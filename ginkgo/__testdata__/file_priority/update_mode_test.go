@@ -1,0 +1,3 @@
+// selfieonce
+// SELFIEWRITE
+package example

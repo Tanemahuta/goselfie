@@ -1,0 +1,77 @@
+name: auto-merge
+
+description: Approve trusted pull requests and enable native auto-merge for eligible updates.
+
+inputs:
+  token:
+    description: Token used to inspect and approve pull requests
+    required: true
+  merge-token:
+    description: Token used to enable auto-merge and trigger follow-up workflows
+    required: true
+  dependabot-approve:
+    description: Semicolon-separated patch|minor|major=*|dependency-type[,dependency-type] rules
+    required: false
+    default: "patch=*;minor=*;major=direct:development"
+  dependabot-review-label:
+    description: Label applied to Dependabot updates that require a manual review
+    required: false
+    default: "dependabot:manual-review"
+  dependabot-update:
+    description: Update type reported by dependabot/fetch-metadata
+    required: false
+    default: ""
+  dependabot-dependency-type:
+    description: Dependency type reported by dependabot/fetch-metadata
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Determine eligibility
+      id: eligibility
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        ACTOR: ${{ github.actor }}
+        REPOSITORY: ${{ github.repository }}
+        REPOSITORY_OWNER: ${{ github.repository_owner }}
+        DEPENDABOT_UPDATE: ${{ inputs.dependabot-update }}
+        DEPENDABOT_DEPENDENCY_TYPE: ${{ inputs.dependabot-dependency-type }}
+        DEPENDABOT_APPROVE: ${{ inputs.dependabot-approve }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "${ACTION_PATH}/eligibility.sh"
+
+    - name: Mark Dependabot update for manual review
+      if: >-
+        github.event.pull_request.user.login == 'dependabot[bot]' &&
+        steps.eligibility.outputs.eligible != 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        REPOSITORY: ${{ github.repository }}
+        REVIEW_LABEL: ${{ inputs.dependabot-review-label }}
+        DEPENDABOT_UPDATE: ${{ inputs.dependabot-update }}
+        DEPENDABOT_DEPENDENCY_TYPE: ${{ inputs.dependabot-dependency-type }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "${ACTION_PATH}/manual-review.sh"
+
+    - name: Approve latest commit
+      if: steps.eligibility.outputs.eligible == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+      run: gh pr review "${PR_URL}" --approve --body "Automated approval of the latest commit."
+
+    - name: Enable native auto-merge
+      if: steps.eligibility.outputs.eligible == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.merge-token }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+      run: gh pr merge "${PR_URL}" --auto --merge
