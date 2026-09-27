@@ -1,0 +1,44 @@
+name: release
+
+on:
+  workflow_run:
+    workflows: [verify]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.repository_id }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout verified commit and history
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install semantic-release
+        run: npm ci --prefix .github/release --ignore-scripts
+      - name: Create release from commit messages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./.github/release/node_modules/.bin/semantic-release

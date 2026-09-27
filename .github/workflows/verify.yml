@@ -1,0 +1,40 @@
+name: verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.repository_id }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Check module metadata
+        run: go mod tidy -diff
+      - name: Run go vet
+        run: go vet ./...
+      - name: Run Ginkgo tests with race detection and coverage
+        run: >-
+          go run github.com/onsi/ginkgo/v2/ginkgo -r -p
+          --randomize-all --randomize-suites --fail-on-pending --fail-on-empty
+          --keep-going --cover --coverprofile=cover.profile --race --trace
+          --json-report=report.json --timeout=1m
+          --poll-progress-after=10s --poll-progress-interval=10s
