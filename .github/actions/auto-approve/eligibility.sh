@@ -7,7 +7,7 @@ write_result() {
 
 is_latest_commit() {
   local current_head
-  current_head="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+  current_head="$(gh pr view "${PR_URL}" --json headRefOid --jq .headRefOid)"
   [[ "${current_head}" == "${EVENT_HEAD_SHA}" ]]
 }
 
@@ -34,10 +34,10 @@ dependabot_rule_matches() {
   return 1
 }
 
-if [[ ! "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
-  echo "Invalid pull request number." >&2
-  exit 1
-fi
+is_auto_release() {
+  [[ "${HEAD_REPOSITORY}" == "${REPOSITORY}" && "${HEAD_REF}" == release-* ]] &&
+    jq -e 'index("auto-release") != null' <<<"${LABELS}" >/dev/null
+}
 
 if ! is_latest_commit; then
   echo "The pull request changed while approval was running."
@@ -45,6 +45,8 @@ if ! is_latest_commit; then
 elif [[ "${ACTOR,,}" == "${REPOSITORY_OWNER,,}" ]]; then
   write_result true
 elif [[ "${ACTOR}" == "dependabot[bot]" ]] && dependabot_rule_matches; then
+  write_result true
+elif is_auto_release; then
   write_result true
 else
   write_result false
