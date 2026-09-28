@@ -23,5 +23,5 @@ jobs:
       - name: Approve eligible pull request and enable native auto-merge
         uses: ./.github/actions/auto-approve
         with:
-          token: ${{ github.token }}
-          merge-token: ${{ secrets.AUTO_RELEASE_TOKEN || github.token }}
+          token: ${{ secrets.AUTO_RELEASE_TOKEN }}
+          merge-token: ${{ secrets.AUTO_RELEASE_TOKEN }}
