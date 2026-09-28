@@ -13,6 +13,7 @@ permissions: {}
 jobs:
   release:
     uses: ./.github/workflows/release-callable.yml
+    secrets: inherit
     permissions:
       actions: read
       contents: write
