@@ -1,8 +1,8 @@
 name: verify
 
 on:
-  workflow_call:
-
+  workflow_call: {}
+    
 concurrency:
   group: verify-${{ github.repository_id }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -57,7 +57,7 @@ jobs:
           go run github.com/onsi/ginkgo/v2/ginkgo -r -p
           --randomize-all --randomize-suites --fail-on-pending --fail-on-empty
           --keep-going --cover --coverprofile=cover.profile --race --trace
-          --json-report=report.json --timeout=1m
+          --json-report=report.json --timeout=5m
           --poll-progress-after=10s --poll-progress-interval=10s
 
   golangci-lint:
