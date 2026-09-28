@@ -1,10 +1,9 @@
-name: auto-merge
-
-description: Approve trusted pull requests and enable native auto-merge for eligible updates.
+name: auto-approve
+description: Approve trusted pull requests at their latest commit and enable native auto-merge
 
 inputs:
   token:
-    description: Token used to inspect and approve pull requests
+    description: Token used to authenticate and update the pull request
     required: true
   merge-token:
     description: Token used to enable auto-merge and trigger follow-up workflows
@@ -14,33 +13,35 @@ inputs:
     required: false
     default: "patch=*;minor=*;major=direct:development"
   dependabot-review-label:
-    description: Label applied to Dependabot updates that require a manual review
+    description: Label applied to Dependabot updates that require manual review
     required: false
     default: "dependabot:manual-review"
-  dependabot-update:
-    description: Update type reported by dependabot/fetch-metadata
-    required: false
-    default: ""
-  dependabot-dependency-type:
-    description: Dependency type reported by dependabot/fetch-metadata
-    required: false
-    default: ""
 
 runs:
   using: composite
   steps:
+    - name: Read Dependabot metadata
+      if: github.event.pull_request.user.login == 'dependabot[bot]'
+      id: dependabot
+      uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+      with:
+        github-token: ${{ inputs.token }}
+
     - name: Determine eligibility
       id: eligibility
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
         EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         ACTOR: ${{ github.actor }}
+        HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
         REPOSITORY: ${{ github.repository }}
         REPOSITORY_OWNER: ${{ github.repository_owner }}
-        DEPENDABOT_UPDATE: ${{ inputs.dependabot-update }}
-        DEPENDABOT_DEPENDENCY_TYPE: ${{ inputs.dependabot-dependency-type }}
+        LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        DEPENDABOT_UPDATE: ${{ steps.dependabot.outputs.update-type }}
+        DEPENDABOT_DEPENDENCY_TYPE: ${{ steps.dependabot.outputs.dependency-type }}
         DEPENDABOT_APPROVE: ${{ inputs.dependabot-approve }}
         ACTION_PATH: ${{ github.action_path }}
       run: bash "${ACTION_PATH}/eligibility.sh"
@@ -55,8 +56,8 @@ runs:
         PR_URL: ${{ github.event.pull_request.html_url }}
         REPOSITORY: ${{ github.repository }}
         REVIEW_LABEL: ${{ inputs.dependabot-review-label }}
-        DEPENDABOT_UPDATE: ${{ inputs.dependabot-update }}
-        DEPENDABOT_DEPENDENCY_TYPE: ${{ inputs.dependabot-dependency-type }}
+        DEPENDABOT_UPDATE: ${{ steps.dependabot.outputs.update-type }}
+        DEPENDABOT_DEPENDENCY_TYPE: ${{ steps.dependabot.outputs.dependency-type }}
         ACTION_PATH: ${{ github.action_path }}
       run: bash "${ACTION_PATH}/manual-review.sh"
 

@@ -1,0 +1,55 @@
+name: release
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  verify:
+    name: verify
+    uses: ./.github/workflows/verify-callable.yml
+    permissions:
+      contents: read
+
+  codeql:
+    name: CodeQL
+    uses: ./.github/workflows/codeql-callable.yml
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+  quality:
+    name: dependency quality
+    uses: ./.github/workflows/quality-callable.yml
+    permissions:
+      contents: read
+
+  release:
+    name: Publish release
+    needs: [verify, codeql, quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out pushed commit and history
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Calculate version and create release tag
+        id: version
+        uses: bitshifted/git-auto-semver@v2.0.11
+        with:
+          main_branch: main
+          initial_version: 1.0.0
+          create_tag: true
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version-string }}
+          generate_release_notes: true
+          token: ${{ github.token }}

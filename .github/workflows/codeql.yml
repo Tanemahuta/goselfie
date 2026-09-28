@@ -3,42 +3,18 @@ name: CodeQL
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
   merge_group:
     types: [checks_requested]
   schedule:
     - cron: '23 6 * * 1'
   workflow_dispatch:
 
-concurrency:
-  group: codeql-${{ github.repository_id }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 permissions: {}
 
 jobs:
-  analyze:
-    name: Analyze (Go)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+  codeql:
+    uses: ./.github/workflows/codeql-callable.yml
     permissions:
       actions: read
       contents: read
       security-events: write
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7.0.1
-      - name: Set up Go
-        uses: actions/setup-go@v7.0.0
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: go
-      - name: Build Go code for analysis
-        uses: github/codeql-action/autobuild@v4
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
