@@ -1,0 +1,21 @@
+name: Go proxy warming
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  warm:
+    if: startsWith(github.event.release.tag_name, 'v')
+    name: Warm Go module proxy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull released module from the Go proxy
+        uses: andrewslotin/go-proxy-pull-action@v1.5.0
+        env:
+          # The action image includes Go 1.26; use the version required by go.mod.
+          GOTOOLCHAIN: go1.27.1
+        with:
+          import_path: github.com/tanemahuta/goselfie
