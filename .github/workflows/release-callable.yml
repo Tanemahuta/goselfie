@@ -48,7 +48,7 @@ jobs:
           initial_version: 1.0.0
           create_tag: true
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.version-string }}
           generate_release_notes: true
