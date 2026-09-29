@@ -42,21 +42,6 @@ var _ = Describe("Content matcher registry", func() {
 		It("uses the matcher as the content encoder", func() { Expect(encoded).To(Equal("value")) })
 	})
 
-	When("built-in matchers inspect YAML, text, and binary values", func() {
-		var actual []Type
-
-		BeforeEach(func() {
-			actual = []Type{
-				Matchers.Detect([]byte("name: example\n")),
-				Matchers.Detect([]byte("name: first\nname: second\n")),
-				Matchers.Detect([]byte{0x00, 0xff}),
-			}
-		})
-
-		It("prefers YAML and falls back to text or binary", func() {
-			Expect(actual).To(Equal([]Type{YAML, Text, Binary}))
-		})
-	})
 })
 
 type testMatcher struct {

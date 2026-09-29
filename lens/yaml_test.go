@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	yaml "github.com/tanemahuta/goselfie/lens/yaml"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 

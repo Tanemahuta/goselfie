@@ -3,7 +3,7 @@ package failuremessage
 import (
 	"sync"
 
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
 
 // Registry maps content types to failure message providers.

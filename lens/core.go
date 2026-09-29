@@ -1,7 +1,7 @@
 // Package lens defines typed transformations that prepare values for snapshots.
 package lens
 
-import "github.com/tanemahuta/goselfie/snapshot/content"
+import "github.com/tanemahuta/goselfie/snapshot/codec/content"
 
 // Lens transforms a snapshot input into another representation.
 type Lens[I any, O any] interface {

@@ -15,7 +15,7 @@ import (
 	selfieginkgo "github.com/tanemahuta/goselfie/ginkgo"
 	"github.com/tanemahuta/goselfie/lens"
 	"github.com/tanemahuta/goselfie/snapshot"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 	"github.com/tanemahuta/goselfie/utils"
 )
 

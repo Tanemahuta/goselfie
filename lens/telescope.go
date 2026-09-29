@@ -1,6 +1,6 @@
 package lens
 
-import "github.com/tanemahuta/goselfie/snapshot/content"
+import "github.com/tanemahuta/goselfie/snapshot/codec/content"
 
 // Telescope composes two typed lenses into a single lens.
 func Telescope[I any, J any, O any](lhs Lens[I, J], rhs Lens[J, O]) Lens[I, O] {

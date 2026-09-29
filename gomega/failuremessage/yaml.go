@@ -2,7 +2,7 @@ package failuremessage
 
 import (
 	"github.com/onsi/gomega/format"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
 
 //nolint:gochecknoinits // Register this provider when its implementation is imported.

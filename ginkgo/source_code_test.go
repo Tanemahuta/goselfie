@@ -11,7 +11,7 @@ import (
 
 	"github.com/tanemahuta/goselfie/internal/test"
 	"github.com/tanemahuta/goselfie/snapshot"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 	"github.com/tanemahuta/goselfie/utils"
 )
 
