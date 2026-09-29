@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	yaml "github.com/tanemahuta/goselfie/lens/yaml"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 

@@ -12,11 +12,27 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/tanemahuta/goselfie/snapshot"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 	"github.com/tanemahuta/goselfie/utils"
 )
 
 var _ = Describe("Album", func() {
+	Describe("reading snapshot albums", func() {
+		When("the last snapshot is truncated", func() {
+			var decoded []snapshot.Data
+			var decodeErr error
+
+			BeforeEach(func() {
+				decoded, decodeErr = Decode(bytes.NewBufferString("╔═ v2:text:0:name ═╗\n"))
+			})
+
+			It("reports the incomplete record rather than accepting end of file", func() {
+				Expect(decoded).To(BeNil())
+				Expect(decodeErr).To(MatchError(ContainSubstring("snapshot separator")))
+			})
+		})
+	})
+
 	Describe("metadata and empty writes", func() {
 		var testFile string
 		var opened Album
@@ -122,7 +138,7 @@ var _ = Describe("Album", func() {
 				Expect(err).NotTo(HaveOccurred())
 				DeferCleanup(func() { evictSnapshots(decoded) })
 
-				decodedByName := make(map[string]snapshot.Taken, len(decoded))
+				decodedByName := make(map[string]snapshot.Data, len(decoded))
 				for _, current := range decoded {
 					decodedByName[strings.Join(current.Name(), "\x00")] = current
 				}

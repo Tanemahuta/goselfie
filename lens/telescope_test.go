@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
 
 type testTypedLens[I any, O any] func(I) (O, error)

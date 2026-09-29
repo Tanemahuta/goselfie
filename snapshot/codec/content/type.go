@@ -14,6 +14,9 @@ const (
 	// YAML contains YAML stored verbatim.
 	YAML Type = "yaml"
 
+	// BinaryMaxCharsPerLine is the maximum width of an encoded hexadecimal row.
+	BinaryMaxCharsPerLine = 78
 	// BinaryBytesPerLine is the number of bytes encoded on one hexadecimal line.
-	BinaryBytesPerLine = 27
+	// With inter-byte spaces and no trailing space, this uses 77 characters per row.
+	BinaryBytesPerLine = BinaryMaxCharsPerLine / 3
 )

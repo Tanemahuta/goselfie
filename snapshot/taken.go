@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 	"github.com/tanemahuta/goselfie/utils"
 )
 

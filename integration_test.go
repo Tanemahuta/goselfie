@@ -12,7 +12,7 @@ import (
 
 	"github.com/tanemahuta/goselfie/album"
 	testfixture "github.com/tanemahuta/goselfie/internal/test"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
 
 type updateDirectiveScenario struct {

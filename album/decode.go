@@ -1,19 +1,19 @@
 package album
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
 	"github.com/tanemahuta/goselfie/snapshot"
+	"github.com/tanemahuta/goselfie/snapshot/codec"
 )
 
 // Decode streams every snapshot from an album in file order.
-func Decode(input io.Reader) ([]snapshot.Taken, error) {
-	var snapshots []snapshot.Taken
+func Decode(input io.Reader) ([]snapshot.Data, error) {
+	var snapshots []snapshot.Data
 	for {
-		current, err := DecodeSnapshot(input)
-		if errors.Is(err, io.EOF) {
+		current, err := codec.DecodeSnapshot(input)
+		if err == io.EOF {
 			return snapshots, nil
 		}
 		if err != nil {
@@ -24,7 +24,7 @@ func Decode(input io.Reader) ([]snapshot.Taken, error) {
 	}
 }
 
-func evictSnapshots(snapshots []snapshot.Taken) {
+func evictSnapshots(snapshots []snapshot.Data) {
 	for _, current := range snapshots {
 		_ = current.Evict()
 	}

@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"github.com/tanemahuta/goselfie/lens"
-	"github.com/tanemahuta/goselfie/snapshot/content"
+	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
 
 var _ = Describe("Matcher constructors", func() {
