@@ -109,6 +109,32 @@ var _ = Describe("Public snapshot integration", func() {
 		})
 	})
 
+	When("snapshots use combined YAML transformers on differently ordered input", func() {
+		var module string
+
+		BeforeEach(func() {
+			module = prepareTestGoProject()
+			runIntegrationTests(module)
+		})
+
+		It("stores identical sorted, masked, and pruned YAML for both orders", func() {
+			expected := testfixture.ReadTestFile("expected/transform.yaml")
+			Expect(storedSnapshot(module, "transform_test.go", "transform", "stores the original order", "value")).To(Equal(expected))
+			Expect(storedSnapshot(module, "transform_test.go", "transform", "stores a shuffled order", "value")).To(Equal(expected))
+		})
+
+		When("the suite runs again with CI enabled", func() {
+			var output []byte
+			var runErr error
+
+			BeforeEach(func() { output, runErr = executeIntegrationTests(module, "CI=true") })
+
+			It("matches the persisted snapshots", func() {
+				Expect(runErr).NotTo(HaveOccurred(), strings.TrimSpace(string(output)))
+			})
+		})
+	})
+
 	When("snapshot updates are enabled through the environment", func() {
 		var module string
 

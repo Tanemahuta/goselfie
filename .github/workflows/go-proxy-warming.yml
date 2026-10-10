@@ -16,6 +16,6 @@ jobs:
         uses: andrewslotin/go-proxy-pull-action@v1.5.0
         env:
           # The action image includes Go 1.26; use the version required by go.mod.
-          GOTOOLCHAIN: go1.27.1
+          GOTOOLCHAIN: go1.27.2
         with:
           import_path: github.com/tanemahuta/goselfie

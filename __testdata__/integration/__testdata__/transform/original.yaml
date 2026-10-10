@@ -1,0 +1,19 @@
+metadata:
+  name: example
+  uid: first
+items:
+- name: alpha
+  token: a-1
+  uid: "1"
+  ports: [80, 443]
+  matrix: [[b, a], [c]]
+- name: bravo
+  token: b-1
+  uid: "2"
+  ports: [8080]
+  matrix: [[e, d]]
+- name: bravo
+  token: b-2
+  uid: "3"
+  ports: [9090, 22]
+  matrix: [[f]]

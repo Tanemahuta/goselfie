@@ -1,0 +1,10 @@
+items:
+- name: a
+  secret: <masked>
+- name: b
+  secret: <masked>
+metadata:
+  name: example
+tags:
+- z
+- a

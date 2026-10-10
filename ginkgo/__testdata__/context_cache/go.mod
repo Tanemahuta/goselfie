@@ -1,6 +1,6 @@
 module example.com/goselfie-context-cache
 
-go 1.27.1
+go 1.27.2
 
 require (
 	github.com/onsi/ginkgo/v2 v2.22.0
