@@ -14,18 +14,13 @@ var _ = Describe("YAML visitor", func() {
 		var result any
 
 		BeforeEach(func() {
-			transform := NewTransformer(func(path []string) bool {
-				name := formatPath(path)
-				calls = append(calls, name)
-				return name == "replace"
-			}, func(any) (any, error) { return map[string]any{"child": "new"}, nil })
-			var err error
-			result, err = Visit(map[string]any{"replace": map[string]any{"child": "old"}}, transform)
-			Expect(err).NotTo(HaveOccurred())
+			calls = nil
+			result = visitYAML("replace_parent/input.yaml",
+				recordingPathTransformer(&calls, "replace", loadYAML("replace_parent/replacement.yaml")))
 		})
 
 		It("keeps the replacement and skips its child", func() {
-			Expect(result).To(Equal(map[string]any{"replace": map[string]any{"child": "new"}}))
+			Expect(result).To(Equal(loadYAML("replace_parent/expected.yaml")))
 			Expect(calls).NotTo(ContainElement("replace.child"))
 		})
 	})
@@ -34,18 +29,15 @@ var _ = Describe("YAML visitor", func() {
 		var result any
 
 		BeforeEach(func() {
-			value := map[string]any{"nullable": "replace", "discard": "remove"}
 			transform := NewTransformer(
 				func(path []string) bool { return formatPath(path) == "nullable" },
 				func(any) (any, error) { return nil, nil },
 			)
-			var err error
-			result, err = Visit(value, transform, Remove("discard"))
-			Expect(err).NotTo(HaveOccurred())
+			result = visitYAML("nil_and_remove/input.yaml", transform, Remove("discard"))
 		})
 
 		It("preserves nil and removes the marked value", func() {
-			Expect(result).To(Equal(map[string]any{"nullable": nil}))
+			Expect(result).To(Equal(loadYAML("nil_and_remove/expected.yaml")))
 		})
 	})
 
@@ -53,14 +45,11 @@ var _ = Describe("YAML visitor", func() {
 		var result any
 
 		BeforeEach(func() {
-			value := map[string]any{"items": []any{"first", "keep", "third"}}
-			var err error
-			result, err = Visit(value, Remove("items.0"), Remove("items.2"))
-			Expect(err).NotTo(HaveOccurred())
+			result = visitYAML("remove_list_elements/input.yaml", Remove("items.0"), Remove("items.2"))
 		})
 
 		It("removes original indexes without skipping shifted values", func() {
-			Expect(result).To(Equal(map[string]any{"items": []any{"keep"}}))
+			Expect(result).To(Equal(loadYAML("remove_list_elements/expected.yaml")))
 		})
 	})
 
@@ -72,9 +61,7 @@ var _ = Describe("YAML visitor", func() {
 				func(path []string) bool { return len(path) == 0 },
 				func(any) (any, error) { return RemoveValue, nil },
 			)
-			var err error
-			result, err = Visit(map[string]any{"value": 1}, transform)
-			Expect(err).NotTo(HaveOccurred())
+			result = visitYAML("remove_root/input.yaml", transform)
 		})
 
 		It("returns the removal marker", func() { Expect(IsRemove(result)).To(BeTrue()) })
@@ -84,18 +71,14 @@ var _ = Describe("YAML visitor", func() {
 		var unchanged, changed any
 
 		BeforeEach(func() {
-			combined := Combine(nil, Combine(nil, Mask("value"), nil), nil)
-			var err error
-			unchanged, err = Visit(map[string]any{"empty": map[string]any{}}, nil, Combine(nil))
-			Expect(err).NotTo(HaveOccurred())
-			changed, err = Visit(map[string]any{"value": "secret"}, combined)
-			Expect(err).NotTo(HaveOccurred())
+			unchanged = visitYAML("nil_transforms/unchanged.yaml", nil, Combine(nil))
+			changed = visitYAML("nil_transforms/input.yaml", Combine(nil, Combine(nil, Mask("value"), nil), nil))
 		})
 
 		It("ignores nil transforms", func() {
 			Expect(Combine(nil, Combine(nil))).To(BeNil())
-			Expect(unchanged).To(HaveKey("empty"))
-			Expect(changed).To(Equal(map[string]any{"value": "<masked>"}))
+			Expect(unchanged).To(Equal(loadYAML("nil_transforms/unchanged.yaml")))
+			Expect(changed).To(Equal(loadYAML("nil_transforms/expected.yaml")))
 		})
 	})
 
@@ -103,20 +86,18 @@ var _ = Describe("YAML visitor", func() {
 		var flatCalls, nestedCalls []string
 
 		BeforeEach(func() {
-			record := func(calls *[]string, name string, priority int) Transformer {
-				return NewTransformer(nil, func(value any) (any, error) {
-					*calls = append(*calls, name)
-					return value, nil
-				}).WithPriority(priority)
-			}
+			flatCalls, nestedCalls = nil, nil
 			_, err := Visit("value",
-				record(&flatCalls, "last", 10),
-				record(&flatCalls, "first tie", 0),
-				record(&flatCalls, "first", -10),
-				record(&flatCalls, "second tie", 0),
+				recordingTransformer(&flatCalls, "last", 10),
+				recordingTransformer(&flatCalls, "first tie", 0),
+				recordingTransformer(&flatCalls, "first", -10),
+				recordingTransformer(&flatCalls, "second tie", 0),
 			)
 			Expect(err).NotTo(HaveOccurred())
-			_, err = Visit("value", Combine(record(&nestedCalls, "late", 10), record(&nestedCalls, "early", -10)), record(&nestedCalls, "middle", 0))
+			_, err = Visit("value",
+				Combine(recordingTransformer(&nestedCalls, "late", 10), recordingTransformer(&nestedCalls, "early", -10)),
+				recordingTransformer(&nestedCalls, "middle", 0),
+			)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -131,6 +112,7 @@ var _ = Describe("YAML visitor", func() {
 		var unchanged, changed any
 
 		BeforeEach(func() {
+			calls = 0
 			matcher, err := path.CompilePath("spec.*.'example.com/key'")
 			Expect(err).NotTo(HaveOccurred())
 			transform := NewTransformer(matcher, func(any) (any, error) { calls++; return "changed", nil })
@@ -150,10 +132,7 @@ var _ = Describe("YAML visitor", func() {
 	When("a transform contains an invalid path", func() {
 		var applyErr error
 
-		BeforeEach(func() {
-			transform := Remove("spec..uid")
-			_, applyErr = transform.Apply([]string{"spec", "uid"}, "value")
-		})
+		BeforeEach(func() { _, applyErr = Remove("spec..uid").Apply([]string{"spec", "uid"}, "value") })
 
 		It("includes the path expression in the error", func() {
 			Expect(applyErr).To(MatchError(ContainSubstring("parse YAML path \"spec..uid\"")))
@@ -185,7 +164,7 @@ var _ = Describe("YAML visitor", func() {
 			matcher, err := path.CompilePath("child")
 			Expect(err).NotTo(HaveOccurred())
 			transform := NewTransformer(matcher, func(any) (any, error) { return nil, fmt.Errorf("failed") })
-			_, visitErr = Visit(map[string]any{"child": "value"}, transform)
+			_, visitErr = Visit(loadYAML("child_error/input.yaml"), transform)
 		})
 
 		It("reports the failing path", func() { Expect(visitErr).To(MatchError(ContainSubstring("child"))) })
@@ -195,11 +174,11 @@ var _ = Describe("YAML visitor", func() {
 		var called bool
 
 		BeforeEach(func() {
-			transforms := []Transformer{
+			called = false
+			_, err := Visit("value",
 				NewTransformer(nil, func(any) (any, error) { return RemoveValue, nil }),
 				NewTransformer(nil, func(value any) (any, error) { called = true; return value, nil }),
-			}
-			_, err := Visit("value", transforms...)
+			)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

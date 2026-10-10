@@ -2,7 +2,6 @@ package ginkgo
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -24,8 +23,8 @@ var _ = Describe("Update mode detection", func() {
 			Expect(err).NotTo(HaveOccurred())
 			containerMode, err = detectContainerUpdateMode(path, 3)
 			Expect(err).NotTo(HaveOccurred())
-			start := strings.Index(source, "MatchSnapshot(projection)")
-			matcherMode, err = UpdateModeForSource(path, utils.Range[int]{Start: start, EndExcl: start + len("MatchSnapshot(projection)")})
+			start := strings.Index(source, string(testfixture.ReadTestFile("update_mode_markers/matcher.txt")))
+			matcherMode, err = UpdateModeForSource(path, utils.Range[int]{Start: start, EndExcl: start + len(string(testfixture.ReadTestFile("update_mode_markers/matcher.txt")))})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -61,7 +60,7 @@ var _ = Describe("Update mode detection", func() {
 			Expect(mode).To(Equal(snapshot.UpdateModeOnce))
 			contents, err := os.ReadFile(path)
 			Expect(err).NotTo(HaveOccurred())
-			contents = []byte(strings.ReplaceAll(string(contents), "// selfieonce", ""))
+			contents = []byte(strings.ReplaceAll(string(contents), string(testfixture.ReadTestFile("update_mode_markers/directive.txt")), ""))
 			Expect(os.WriteFile(path, contents, 0o600)).To(Succeed())
 		})
 
@@ -113,8 +112,8 @@ var _ = Describe("Update mode detection", func() {
 				Expect(err).NotTo(HaveOccurred())
 				fileMode, err = detectFileUpdateMode(path)
 				Expect(err).NotTo(HaveOccurred())
-				start := strings.Index(source, "MatchSnapshot(projection)")
-				matcherMode, err = UpdateModeForSource(path, utils.Range[int]{Start: start, EndExcl: start + len("MatchSnapshot(projection)")})
+				start := strings.Index(source, string(testfixture.ReadTestFile("update_mode_markers/matcher.txt")))
+				matcherMode, err = UpdateModeForSource(path, utils.Range[int]{Start: start, EndExcl: start + len(string(testfixture.ReadTestFile("update_mode_markers/matcher.txt")))})
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -140,9 +139,9 @@ var _ = Describe("Update mode detection", func() {
 
 			BeforeEach(func() {
 				path, source := updateModeFixture(scenario.fixture)
-				start := strings.Index(source, "MatchSnapshot(projection)")
+				start := strings.Index(source, string(testfixture.ReadTestFile("update_mode_markers/matcher.txt")))
 				var err error
-				matcherMode, err = UpdateModeForSource(path, utils.Range[int]{Start: start, EndExcl: start + len("MatchSnapshot(projection)")})
+				matcherMode, err = UpdateModeForSource(path, utils.Range[int]{Start: start, EndExcl: start + len(string(testfixture.ReadTestFile("update_mode_markers/matcher.txt")))})
 				Expect(err).NotTo(HaveOccurred())
 				containerMode, err = detectContainerUpdateMode(path, 3)
 				Expect(err).NotTo(HaveOccurred())
@@ -160,15 +159,10 @@ var _ = Describe("Update mode detection", func() {
 
 		BeforeEach(func() {
 			path, source := updateModeFixture("nested_container")
-			lineOf := func(text string) int {
-				index := strings.Index(source, text)
-				Expect(index).NotTo(Equal(-1))
-				return strings.Count(source[:index], "\n") + 1
-			}
-			outerLine := lineOf(`Describe("outer"`)
-			innerLine := lineOf(`Context("inner"`)
-			targetLine := lineOf(`It("target"`)
-			siblingLine := lineOf(`It("sibling"`)
+			outerLine := updateModeLineOf(source, string(testfixture.ReadTestFile("update_mode_markers/outer.txt")))
+			innerLine := updateModeLineOf(source, string(testfixture.ReadTestFile("update_mode_markers/inner.txt")))
+			targetLine := updateModeLineOf(source, string(testfixture.ReadTestFile("update_mode_markers/target.txt")))
+			siblingLine := updateModeLineOf(source, string(testfixture.ReadTestFile("update_mode_markers/sibling.txt")))
 			var err error
 			outerMode, err = detectContainerUpdateMode(path, outerLine)
 			Expect(err).NotTo(HaveOccurred())
@@ -188,10 +182,3 @@ var _ = Describe("Update mode detection", func() {
 		})
 	})
 })
-
-func updateModeFixture(name string) (string, string) {
-	path := filepath.Join(testfixture.PrepareTestDir(name), "update_mode_test.go")
-	contents, err := os.ReadFile(path)
-	Expect(err).NotTo(HaveOccurred())
-	return path, string(contents)
-}

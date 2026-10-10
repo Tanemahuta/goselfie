@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	testfixture "github.com/tanemahuta/goselfie/internal/test"
 	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 	"github.com/tanemahuta/goselfie/utils"
 )
@@ -19,7 +20,7 @@ var _ = Describe("NewTaken", func() {
 		BeforeEach(func() {
 			var err error
 			taken, err = NewTaken([]string{"suite", "test"}, content.YAML, source, func(writer io.Writer) error {
-				_, err := io.WriteString(writer, "value")
+				_, err := writer.Write(testfixture.ReadTestFile("taken/value.txt"))
 				return err
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -31,7 +32,7 @@ var _ = Describe("NewTaken", func() {
 			Expect(taken.ContentType()).To(Equal(content.YAML))
 			Expect(taken.Source()).To(Equal(source))
 			Expect(taken.Promoted()).To(BeFalse())
-			Expect(taken.Contents()).To(Equal([]byte("value")))
+			Expect(taken.Contents()).To(Equal(testfixture.ReadTestFile("taken/value.txt")))
 		})
 	})
 
@@ -42,7 +43,7 @@ var _ = Describe("NewTaken", func() {
 		BeforeEach(func() {
 			var err error
 			taken, err = NewTaken([]string{"test"}, content.Unknown, utils.Range[int]{}, func(writer io.Writer) error {
-				_, err := io.WriteString(writer, "value")
+				_, err := writer.Write(testfixture.ReadTestFile("taken/value.txt"))
 				return err
 			})
 			Expect(err).NotTo(HaveOccurred())

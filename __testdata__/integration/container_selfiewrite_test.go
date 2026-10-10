@@ -8,9 +8,9 @@ import (
 )
 
 var _ = Describe("container SELFIEWRITE", func() {
-	var actual map[string]any
+	var actual any
 
-	BeforeEach(func() { actual = map[string]any{"name": "container-always"} })
+	BeforeEach(func() { actual = loadYAML("container_selfiewrite.yaml") })
 
 	// SELFIEWRITE
 	It("writes", func() {

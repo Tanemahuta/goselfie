@@ -3,7 +3,6 @@ package album
 import (
 	"bytes"
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,9 +10,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	testfixture "github.com/tanemahuta/goselfie/internal/test"
 	"github.com/tanemahuta/goselfie/snapshot"
-	"github.com/tanemahuta/goselfie/snapshot/codec/content"
-	"github.com/tanemahuta/goselfie/utils"
 )
 
 var _ = Describe("Album", func() {
@@ -23,7 +21,7 @@ var _ = Describe("Album", func() {
 			var decodeErr error
 
 			BeforeEach(func() {
-				decoded, decodeErr = Decode(bytes.NewBufferString("╔═ v2:text:0:name ═╗\n"))
+				decoded, decodeErr = Decode(bytes.NewReader(testfixture.ReadTestFile("truncated/album.ss")))
 			})
 
 			It("reports the incomplete record rather than accepting end of file", func() {
@@ -66,8 +64,8 @@ var _ = Describe("Album", func() {
 
 				var encoded bytes.Buffer
 				Expect(Encode([]snapshot.Data{
-					testData{name: []string{"suite", "first"}, contents: []byte("text")},
-					testData{name: []string{"suite", "second"}, contents: []byte{0, 0xff}},
+					testData{name: []string{"suite", "first"}, contents: testfixture.ReadTestFile("stored/text.txt")},
+					testData{name: []string{"suite", "second"}, contents: testfixture.ReadTestFile("stored/binary.bin")},
 				}, &encoded)).To(Succeed())
 				Expect(os.WriteFile(albumFile, encoded.Bytes(), 0o600)).To(Succeed())
 
@@ -80,8 +78,8 @@ var _ = Describe("Album", func() {
 
 			It("exposes each stored snapshot", func() {
 				expected := []testData{
-					{name: []string{"suite", "first"}, contents: []byte("text")},
-					{name: []string{"suite", "second"}, contents: []byte{0, 0xff}},
+					{name: []string{"suite", "first"}, contents: testfixture.ReadTestFile("stored/text.txt")},
+					{name: []string{"suite", "second"}, contents: testfixture.ReadTestFile("stored/binary.bin")},
 				}
 				for _, value := range expected {
 					actual := loaded.SnapshotByName(value.Name())
@@ -105,9 +103,9 @@ var _ = Describe("Album", func() {
 
 			var initial bytes.Buffer
 			Expect(Encode([]snapshot.Data{
-				testData{name: []string{"suite", "first It", "#1"}, contents: []byte("old")},
-				testData{name: []string{"suite", "first It", "#3"}, contents: []byte("stale")},
-				testData{name: []string{"suite", "second It", "#1"}, contents: []byte("preserved")},
+				testData{name: []string{"suite", "first It", "#1"}, contents: testfixture.ReadTestFile("updates/old.txt")},
+				testData{name: []string{"suite", "first It", "#3"}, contents: testfixture.ReadTestFile("updates/stale.txt")},
+				testData{name: []string{"suite", "second It", "#1"}, contents: testfixture.ReadTestFile("updates/preserved.txt")},
 			}, &initial)).To(Succeed())
 			Expect(os.WriteFile(albumFile, initial.Bytes(), 0o600)).To(Succeed())
 
@@ -116,8 +114,8 @@ var _ = Describe("Album", func() {
 			Expect(err).NotTo(HaveOccurred())
 			storedFirst = opened.SnapshotByName([]string{"suite", "first It", "#1"})
 			storedSecond = opened.SnapshotByName([]string{"suite", "second It", "#1"})
-			updatedFirst = newTaken([]string{"suite", "first It", "#1"}, "new")
-			addedThird = newTaken([]string{"suite", "first It", "#2"}, "added")
+			updatedFirst = newTaken([]string{"suite", "first It", "#1"}, string(testfixture.ReadTestFile("updates/new.txt")))
+			addedThird = newTaken([]string{"suite", "first It", "#2"}, string(testfixture.ReadTestFile("updates/added.txt")))
 			Expect(opened.UpdateSnapshot(updatedFirst)).To(Succeed())
 			Expect(opened.UpdateSnapshot(addedThird)).To(Succeed())
 		})
@@ -143,9 +141,9 @@ var _ = Describe("Album", func() {
 					decodedByName[strings.Join(current.Name(), "\x00")] = current
 				}
 				Expect(decodedByName).To(HaveLen(3))
-				Expect(decodedByName["suite\x00first It\x00#1"].Contents()).To(Equal([]byte("new")))
-				Expect(decodedByName["suite\x00first It\x00#2"].Contents()).To(Equal([]byte("added")))
-				Expect(decodedByName["suite\x00second It\x00#1"].Contents()).To(Equal([]byte("preserved")))
+				Expect(decodedByName["suite\x00first It\x00#1"].Contents()).To(Equal(testfixture.ReadTestFile("updates/new.txt")))
+				Expect(decodedByName["suite\x00first It\x00#2"].Contents()).To(Equal(testfixture.ReadTestFile("updates/added.txt")))
+				Expect(decodedByName["suite\x00second It\x00#1"].Contents()).To(Equal(testfixture.ReadTestFile("updates/preserved.txt")))
 				Expect(decodedByName).NotTo(HaveKey("suite\x00first It\x00#3"))
 			})
 
@@ -169,7 +167,7 @@ var _ = Describe("Album", func() {
 				testFile := filepath.Join(GinkgoT().TempDir(), "example_test.go")
 				albumFile = filepath.Join(filepath.Dir(testFile), SnapshotsDirName, "example_test.ss")
 				Expect(os.MkdirAll(filepath.Dir(albumFile), 0o755)).To(Succeed())
-				contents = []byte("╔═:v1:text:5:value:═╗value\n")
+				contents = testfixture.ReadTestFile("unchanged/album.ss")
 				Expect(os.WriteFile(albumFile, contents, 0o600)).To(Succeed())
 
 				var err error
@@ -211,7 +209,7 @@ var _ = Describe("Album", func() {
 			BeforeEach(func() {
 				albumFile = filepath.Join(GinkgoT().TempDir(), SnapshotsDirName, "example_test.ss")
 				Expect(os.MkdirAll(filepath.Dir(albumFile), 0o755)).To(Succeed())
-				original = []byte("existing album")
+				original = testfixture.ReadTestFile("write_failure/album.ss")
 				Expect(os.WriteFile(albumFile, original, 0o600)).To(Succeed())
 				opened = &album{
 					filePath:  albumFile,
@@ -250,17 +248,3 @@ var _ = Describe("Album", func() {
 		})
 	})
 })
-
-type failingTaken struct{ testData }
-
-func (taken failingTaken) Source() utils.Range[int] { return utils.Range[int]{} }
-func (taken failingTaken) Promoted() bool           { return false }
-
-func newTaken(name []string, contents string) snapshot.Taken {
-	taken, err := snapshot.NewTaken(name, content.Unknown, utils.Range[int]{}, func(writer io.Writer) error {
-		_, err := io.WriteString(writer, contents)
-		return err
-	})
-	Expect(err).NotTo(HaveOccurred())
-	return taken
-}

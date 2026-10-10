@@ -1,0 +1,7 @@
+metadata:
+  uid: dynamic
+  nullable: null
+spec:
+  items:
+  - secret: one
+  - secret: two

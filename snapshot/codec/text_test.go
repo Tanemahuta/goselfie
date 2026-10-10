@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	testfixture "github.com/tanemahuta/goselfie/internal/test"
 	"github.com/tanemahuta/goselfie/snapshot/codec"
 	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
@@ -15,7 +16,7 @@ var _ = Describe("Text snapshots", func() {
 		value := testData{
 			name:        []string{"suite", "name > value"},
 			contentType: content.Text,
-			contents:    []byte("first\nvalue"),
+			contents:    testfixture.ReadTestFile("text/input.txt"),
 		}
 		var encoded bytes.Buffer
 		var decodedContent []byte
@@ -32,7 +33,7 @@ var _ = Describe("Text snapshots", func() {
 		})
 
 		It("writes a newline after the header and preserves text verbatim", func() {
-			Expect(encoded.String()).To(Equal("╔═ v2:text:11:suite>name \\> value ═╗\nfirst\nvalue\n"))
+			Expect(encoded.String()).To(Equal(string(testfixture.ReadTestFile("text/expected.ss"))))
 			Expect(decodedType).To(Equal(content.Text))
 			Expect(decodedContent).To(Equal(value.contents))
 		})
@@ -42,7 +43,7 @@ var _ = Describe("Text snapshots", func() {
 		var decodeErr error
 
 		BeforeEach(func() {
-			_, decodeErr = codec.DecodeSnapshot(bytes.NewBufferString("╔═ v2:text:10:name ═╗\nshort\n"))
+			_, decodeErr = codec.DecodeSnapshot(bytes.NewReader(testfixture.ReadTestFile("text/truncated.ss")))
 		})
 
 		It("reports the missing content bytes", func() {
@@ -54,7 +55,7 @@ var _ = Describe("Text snapshots", func() {
 		var decodeErr error
 
 		BeforeEach(func() {
-			_, decodeErr = codec.DecodeSnapshot(bytes.NewBufferString("╔═ v2:text:0:name ═╗ \n"))
+			_, decodeErr = codec.DecodeSnapshot(bytes.NewReader(testfixture.ReadTestFile("text/missing_header_separator.ss")))
 		})
 
 		It("reports the missing newline", func() {
@@ -66,7 +67,7 @@ var _ = Describe("Text snapshots", func() {
 		var decodeErr error
 
 		BeforeEach(func() {
-			_, decodeErr = codec.DecodeSnapshot(bytes.NewBufferString("╔═ v2:text:5:name ═╗\nvalue"))
+			_, decodeErr = codec.DecodeSnapshot(bytes.NewReader(testfixture.ReadTestFile("text/missing_record_separator.ss")))
 		})
 
 		It("reports the incomplete record", func() {

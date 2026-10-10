@@ -1,0 +1,22 @@
+metadata:
+  name: root
+  namespace: team-a
+  labels:
+    app: example
+  annotations:
+    note: keep
+  ownerReferences:
+  - name: owner
+spec:
+  uid: stable
+  generation: 7
+items:
+- metadata:
+    name: child
+    namespace: team-a
+    labels:
+      app: example
+    annotations:
+      note: keep
+    ownerReferences:
+    - name: owner

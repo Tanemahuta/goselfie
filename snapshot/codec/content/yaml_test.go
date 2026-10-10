@@ -3,22 +3,23 @@ package content
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	testfixture "github.com/tanemahuta/goselfie/internal/test"
 )
 
 var _ = Describe("YAML content", func() {
 	When("the stream contains valid YAML documents", func() {
 		var actual []Type
 		var encoded string
-		contents := []byte("name: first\n---\nname: second\n")
+		contents := testfixture.ReadTestFile("yaml/multiple_documents.yaml")
 
 		BeforeEach(func() {
 			registry := NewRegistry()
 			registry.Register(YAMLContent{})
 			actual = []Type{
-				Matchers.Detect([]byte("name: example\n")),
+				Matchers.Detect(testfixture.ReadTestFile("yaml/document.yaml")),
 				registry.Detect(contents),
-				registry.Detect([]byte("just words\n")),
-				registry.Detect([]byte("42\n")),
+				registry.Detect(testfixture.ReadTestFile("yaml/string_scalar.yaml")),
+				registry.Detect(testfixture.ReadTestFile("yaml/numeric_scalar.yaml")),
 			}
 			var err error
 			encoded, err = Matchers.Encoder(YAML).Encode(contents)
@@ -38,8 +39,8 @@ var _ = Describe("YAML content", func() {
 			registry := NewRegistry()
 			registry.Register(YAMLContent{})
 			actual = []Type{
-				registry.Detect([]byte("name: first\n---\nname: [broken\n")),
-				registry.Detect([]byte("name: [broken\n")),
+				registry.Detect(testfixture.ReadTestFile("yaml/invalid_stream.yaml")),
+				registry.Detect(testfixture.ReadTestFile("yaml/invalid_document.yaml")),
 				registry.Detect(nil),
 			}
 		})

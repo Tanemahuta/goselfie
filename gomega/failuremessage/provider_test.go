@@ -3,6 +3,7 @@ package failuremessage
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	testfixture "github.com/tanemahuta/goselfie/internal/test"
 
 	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
@@ -20,8 +21,8 @@ var _ = Describe("Provider registry", func() {
 
 		It("returns that provider for message generation", func() {
 			Expect(actual).To(Equal(provider))
-			Expect(actual.FailureMessage([]byte("actual"), []byte("expected"))).To(Equal("actual:expected"))
-			Expect(actual.NegateFailureMessage([]byte("actual"), []byte("expected"))).To(Equal("not:actual:expected"))
+			Expect(actual.FailureMessage(testfixture.ReadTestFile("registered/actual.txt"), testfixture.ReadTestFile("registered/expected.txt"))).To(Equal(string(testfixture.ReadTestFile("registered/expected_message.txt"))))
+			Expect(actual.NegateFailureMessage(testfixture.ReadTestFile("registered/actual.txt"), testfixture.ReadTestFile("registered/expected.txt"))).To(Equal(string(testfixture.ReadTestFile("registered/expected_negated_message.txt"))))
 		})
 	})
 
@@ -32,25 +33,25 @@ var _ = Describe("Provider registry", func() {
 		BeforeEach(func() {
 			text := Providers.Provider(content.Text)
 			yaml := Providers.Provider(content.YAML)
-			textMessage = text.FailureMessage([]byte("actual text"), []byte("expected text"))
-			yamlMessage = yaml.FailureMessage([]byte("name: actual"), []byte("name: expected"))
-			textNegated = text.NegateFailureMessage([]byte("actual text"), []byte("expected text"))
-			yamlNegated = yaml.NegateFailureMessage([]byte("name: actual"), []byte("name: expected"))
+			textMessage = text.FailureMessage(testfixture.ReadTestFile("text/actual.txt"), testfixture.ReadTestFile("text/expected.txt"))
+			yamlMessage = yaml.FailureMessage(testfixture.ReadTestFile("yaml/actual.yaml"), testfixture.ReadTestFile("yaml/expected.yaml"))
+			textNegated = text.NegateFailureMessage(testfixture.ReadTestFile("text/actual.txt"), testfixture.ReadTestFile("text/expected.txt"))
+			yamlNegated = yaml.NegateFailureMessage(testfixture.ReadTestFile("yaml/actual.yaml"), testfixture.ReadTestFile("yaml/expected.yaml"))
 		})
 
 		It("uses Gomega's expected-value and diff format", func() {
 			Expect(textMessage).To(ContainSubstring("Expected"))
 			Expect(textMessage).To(ContainSubstring("to match snapshot"))
-			Expect(textMessage).To(ContainSubstring("actual text"))
-			Expect(textMessage).To(ContainSubstring("expected text"))
+			Expect(textMessage).To(ContainSubstring(string(testfixture.ReadTestFile("text/actual.txt"))))
+			Expect(textMessage).To(ContainSubstring(string(testfixture.ReadTestFile("text/expected.txt"))))
 			Expect(yamlMessage).To(ContainSubstring("Expected"))
 			Expect(yamlMessage).To(ContainSubstring("to match YAML snapshot"))
-			Expect(yamlMessage).To(ContainSubstring("name: actual"))
-			Expect(yamlMessage).To(ContainSubstring("name: expected"))
+			Expect(yamlMessage).To(ContainSubstring(string(testfixture.ReadTestFile("yaml/actual.yaml"))))
+			Expect(yamlMessage).To(ContainSubstring(string(testfixture.ReadTestFile("yaml/expected.yaml"))))
 			Expect(textNegated).To(ContainSubstring("not to match snapshot"))
-			Expect(textNegated).To(ContainSubstring("actual text"))
+			Expect(textNegated).To(ContainSubstring(string(testfixture.ReadTestFile("text/actual.txt"))))
 			Expect(yamlNegated).To(ContainSubstring("not to match YAML snapshot"))
-			Expect(yamlNegated).To(ContainSubstring("name: expected"))
+			Expect(yamlNegated).To(ContainSubstring(string(testfixture.ReadTestFile("yaml/expected.yaml"))))
 		})
 	})
 
@@ -62,30 +63,20 @@ var _ = Describe("Provider registry", func() {
 			registry := NewRegistry()
 			provider = registry.Provider(content.Unknown)
 			defaultProvider = registry.DefaultProvider()
-			message = provider.FailureMessage([]byte{0x00, 0xff}, []byte{0x00, 0x01})
-			negatedMessage = provider.NegateFailureMessage([]byte{0x00, 0xff}, []byte{0x00, 0x01})
+			message = provider.FailureMessage(testfixture.ReadTestFile("binary/actual.bin"), testfixture.ReadTestFile("binary/expected.bin"))
+			negatedMessage = provider.NegateFailureMessage(testfixture.ReadTestFile("binary/actual.bin"), testfixture.ReadTestFile("binary/expected.bin"))
 		})
 
 		It("uses the binary default and diffs spaced hexadecimal text", func() {
 			Expect(provider).To(Equal(defaultProvider))
 			Expect(message).To(ContainSubstring("to match binary snapshot"))
-			Expect(message).To(ContainSubstring("00 ff"))
-			Expect(message).To(ContainSubstring("00 01"))
+			Expect(message).To(ContainSubstring(string(testfixture.ReadTestFile("binary/actual_hex.txt"))))
+			Expect(message).To(ContainSubstring(string(testfixture.ReadTestFile("binary/expected_hex.txt"))))
 			Expect(negatedMessage).To(ContainSubstring("not to match binary snapshot"))
-			Expect(negatedMessage).To(ContainSubstring("00 ff"))
+			Expect(negatedMessage).To(ContainSubstring(string(testfixture.ReadTestFile("binary/actual_hex.txt"))))
 		})
 	})
 })
-
-type testProvider struct{}
-
-func (testProvider) FailureMessage(actual []byte, expected []byte) string {
-	return string(actual) + ":" + string(expected)
-}
-
-func (testProvider) NegateFailureMessage(actual []byte, expected []byte) string {
-	return "not:" + string(actual) + ":" + string(expected)
-}
 
 var _ = Describe("default provider lookup", func() {
 	It("returns the registered default for unknown content", func() {
