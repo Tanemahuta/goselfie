@@ -37,6 +37,24 @@ func PrepareTestDir(name string) string {
 	return target
 }
 
+// ReadTestFile reads a file, given as a slash-separated relative path, from the
+// calling package's __testdata__ directory.
+func ReadTestFile(name string) []byte {
+	ginkgo.GinkgoHelper()
+	root, err := callerTestDataDir()
+	if err != nil {
+		panic(err)
+	}
+	if !filepath.IsLocal(filepath.FromSlash(name)) {
+		panic(fmt.Errorf("read test file: invalid fixture name %q", name))
+	}
+	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(name)))
+	if err != nil {
+		panic(fmt.Errorf("read test file %q: %w", name, err))
+	}
+	return data
+}
+
 func callerTestDataDir() (string, error) {
 	pcs := make([]uintptr, 32)
 	count := runtime.Callers(2, pcs)

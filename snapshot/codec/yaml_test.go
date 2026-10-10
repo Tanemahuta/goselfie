@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	testfixture "github.com/tanemahuta/goselfie/internal/test"
 	"github.com/tanemahuta/goselfie/snapshot/codec"
 	"github.com/tanemahuta/goselfie/snapshot/codec/content"
 )
@@ -15,7 +16,7 @@ var _ = Describe("YAML snapshots", func() {
 		value := testData{
 			name:        []string{"document"},
 			contentType: content.YAML,
-			contents:    []byte("name: example\n"),
+			contents:    testfixture.ReadTestFile("yaml/input.yaml"),
 		}
 		var encoded bytes.Buffer
 		var decodedContent []byte
@@ -32,7 +33,7 @@ var _ = Describe("YAML snapshots", func() {
 		})
 
 		It("preserves the YAML header, content type, and document bytes", func() {
-			Expect(encoded.String()).To(Equal("╔═ v2:yaml:14:document ═╗\nname: example\n\n"))
+			Expect(encoded.String()).To(Equal(string(testfixture.ReadTestFile("yaml/expected.ss"))))
 			Expect(decodedType).To(Equal(content.YAML))
 			Expect(decodedContent).To(Equal(value.contents))
 		})

@@ -1,0 +1,5 @@
+spec:
+  nested:
+    uid: x
+labels:
+  example.com/key: "y"

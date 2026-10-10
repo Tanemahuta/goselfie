@@ -9,12 +9,12 @@ import (
 
 var _ = Describe("environment", func() {
 	It("updates existing", func() {
-		actual := map[string]any{"name": "environment-original"}
+		actual := loadYAML("environment/updates_existing.yaml")
 		Expect(actual).To(goselfie.MatchSnapshot(lens.ToYAML()).WithName("value"))
 	})
 
 	It("writes another container", func() {
-		actual := map[string]any{"name": "environment-second"}
+		actual := loadYAML("environment/another_container.yaml")
 		Expect(actual).To(goselfie.MatchSnapshot(lens.ToYAML()).WithName("value"))
 	})
 })

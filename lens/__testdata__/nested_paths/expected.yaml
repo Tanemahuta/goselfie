@@ -1,0 +1,6 @@
+metadata:
+  nullable: null
+spec:
+  items:
+  - secret: <masked>
+  - secret: two

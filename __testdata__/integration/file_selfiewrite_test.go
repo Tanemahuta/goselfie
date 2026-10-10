@@ -9,9 +9,9 @@ import (
 )
 
 var _ = Describe("file SELFIEWRITE", func() {
-	var actual map[string]any
+	var actual any
 
-	BeforeEach(func() { actual = map[string]any{"name": "file-always"} })
+	BeforeEach(func() { actual = loadYAML("file_selfiewrite.yaml") })
 
 	It("writes", func() {
 		Expect(actual).To(goselfie.MatchSnapshot(lens.ToYAML()).WithName("value"))

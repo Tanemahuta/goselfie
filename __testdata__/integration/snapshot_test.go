@@ -16,9 +16,9 @@ func TestSnapshots(t *testing.T) {
 }
 
 var _ = Describe("file selfieonce", func() {
-	var actual map[string]any
+	var actual any
 
-	BeforeEach(func() { actual = map[string]any{"name": "example"} })
+	BeforeEach(func() { actual = loadYAML("file_selfieonce.yaml") })
 
 	It("writes", func() {
 		Expect(actual).To(goselfie.MatchSnapshot(lens.ToYAML()).WithName("value"))
