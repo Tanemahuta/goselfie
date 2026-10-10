@@ -19,9 +19,67 @@ var _ = Describe("YAML visitor", func() {
 				recordingPathTransformer(&calls, "replace", loadYAML("replace_parent/replacement.yaml")))
 		})
 
-		It("keeps the replacement and skips its child", func() {
+		It("visits children before their parent and keeps the replacement", func() {
 			Expect(result).To(Equal(loadYAML("replace_parent/expected.yaml")))
-			Expect(calls).NotTo(ContainElement("replace.child"))
+			Expect(calls).To(Equal([]string{"replace.child", "replace", "<root>"}))
+		})
+	})
+
+	When("order is ignored for a list", func() {
+		var result any
+
+		BeforeEach(func() {
+			result = visitYAML("ignore_order/list/input.yaml",
+				IgnoreOrder("items"), IgnoreOrder("items.3"), IgnoreOrder("plain"), Mask("items.*.token"))
+		})
+
+		It("sorts the matched lists by YAML after transforming children and leaves the rest alone", func() {
+			Expect(result).To(Equal(loadYAML("ignore_order/list/expected.yaml")))
+		})
+	})
+
+	When("order is ignored for nested lists", func() {
+		const input = "ignore_order/nested_lists/input.yaml"
+
+		It("sorts the outer list by its elements' YAML without touching inner lists", func() {
+			Expect(visitYAML(input, IgnoreOrder("matrix"))).
+				To(Equal(loadYAML("ignore_order/nested_lists/expected_outer.yaml")))
+		})
+
+		It("sorts inner lists before the outer list", func() {
+			Expect(visitYAML(input, IgnoreOrder("matrix"), IgnoreOrder("matrix.*"))).
+				To(Equal(loadYAML("ignore_order/nested_lists/expected_nested.yaml")))
+		})
+
+		It("sorts every list for a recursive path", func() {
+			Expect(visitYAML(input, IgnoreOrder("**"))).
+				To(Equal(loadYAML("ignore_order/nested_lists/expected_recursive.yaml")))
+		})
+	})
+
+	When("nested elements differ only in inner order", func() {
+		var first, second any
+
+		BeforeEach(func() {
+			transforms := []Transformer{IgnoreOrder("items"), IgnoreOrder("items.*.ports")}
+			first = visitYAML("ignore_order/inner_order/first.yaml", transforms...)
+			second = visitYAML("ignore_order/inner_order/second.yaml", transforms...)
+		})
+
+		It("sorts the outer list by the normalized elements", func() {
+			expected := loadYAML("ignore_order/inner_order/expected.yaml")
+			Expect(first).To(Equal(expected))
+			Expect(second).To(Equal(expected))
+		})
+	})
+
+	When("a container is empty without removal", func() {
+		var result any
+
+		BeforeEach(func() { result = visitYAML("empty_containers/input.yaml", Mask("value")) })
+
+		It("keeps the empty containers", func() {
+			Expect(result).To(Equal(loadYAML("empty_containers/expected.yaml")))
 		})
 	})
 

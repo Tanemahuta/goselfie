@@ -1,0 +1,12 @@
+metadata:
+  uid: dynamic
+  name: example
+items:
+- name: b
+  secret: two
+  uid: "2"
+- name: a
+  secret: one
+  uid: "1"
+- uid: only
+tags: [z, a]

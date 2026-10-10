@@ -1,0 +1,5 @@
+items:
+- name: x
+  ports: [2, 1]
+- name: x
+  ports: [1, 3]

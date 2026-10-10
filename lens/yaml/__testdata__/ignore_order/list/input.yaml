@@ -1,0 +1,12 @@
+items:
+- name: c
+  token: zzz
+- b
+- name: a
+  token: aaa
+- - d
+  - c
+other:
+- "2"
+- "1"
+plain: unchanged

@@ -1,0 +1,8 @@
+matrix:
+- - a
+  - b
+- - c
+  - d
+- list:
+  - e
+  - f

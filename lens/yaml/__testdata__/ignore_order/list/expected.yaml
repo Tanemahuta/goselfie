@@ -1,0 +1,12 @@
+items:
+- - c
+  - d
+- b
+- name: a
+  token: <masked>
+- name: c
+  token: <masked>
+other:
+- "2"
+- "1"
+plain: unchanged

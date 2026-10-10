@@ -166,6 +166,25 @@ var _ = Describe("YAML lens", func() {
 		})
 	})
 
+	When("remove, mask, and ignore-order transforms are combined", func() {
+		var data []byte
+
+		BeforeEach(func() {
+			transform := yaml.Combine(
+				yaml.IgnoreOrder("items"),
+				yaml.Mask("items.*.secret"),
+				yaml.Remove("**.uid"),
+			)
+			var err error
+			data, _, err = ToYAML().Transform(transform).Apply(loadYAML[any]("combined/input.yaml"), content.Unknown)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("transforms children before sorting and leaves other lists in place", func() {
+			Expect(data).To(Equal(testfixture.ReadTestFile("combined/expected.yaml")))
+		})
+	})
+
 	When("transforms target recursive and quoted paths", func() {
 		var data []byte
 

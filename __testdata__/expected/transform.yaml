@@ -1,0 +1,26 @@
+items:
+- matrix:
+  - - a
+    - b
+  - - c
+  name: alpha
+  ports:
+  - 443
+  - 80
+  token: <masked>
+- matrix:
+  - - d
+    - e
+  name: bravo
+  ports:
+  - 8080
+  token: <masked>
+- matrix:
+  - - f
+  name: bravo
+  ports:
+  - 22
+  - 9090
+  token: <masked>
+metadata:
+  name: example

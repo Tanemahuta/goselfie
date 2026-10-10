@@ -34,7 +34,19 @@ matcher := goselfie.MatchSnapshot(lens.ToYAML()).WithName("created resource")
 Expect(resource).To(matcher)
 ```
 
-Lenses run before comparison and storage. For example, YAML transformers can remove or mask unstable fields, and `lens/yaml/k8s` provides a default Kubernetes resource transformer.
+Lenses run before comparison and storage. For example, YAML transformers can remove or mask unstable fields, and `lens/yaml/k8s` provides a default Kubernetes resource transformer:
+
+```go
+transform := yaml.Combine(
+    k8s.DefaultTransformer(),
+    yaml.Remove("spec.**.uid"),         // delete the value
+    yaml.Mask("spec.items.*.token"),    // replace the value with "<masked>"
+    yaml.IgnoreOrder("spec.items"),     // sort the list by each element's YAML
+)
+Expect(resource).To(goselfie.MatchSnapshot(lens.ToYAML().Transform(transform)))
+```
+
+Paths are dot-separated; `*` matches one segment, `**` matches any number of segments, list indexes are plain numbers, and keys containing dots are quoted (`labels.'example.com/key'`). `IgnoreOrder` only changes lists; other values at its path are left alone. Elements are compared as YAML text, so numbers sort lexically (`443` before `80`); nested lists need their own path (`items.*.ports`, or `**` for every list). The visitor is depth-first: children are transformed before their parent, so `IgnoreOrder` sorts already masked or pruned elements, and maps or lists emptied by `Remove` are removed as well. At the same node, transformers run in ascending `WithPriority` order.
 
 ## Matching and updates
 
@@ -111,7 +123,7 @@ Goselfie focuses on Selfie's disk-snapshot matching and update-marker workflow, 
 - `goselfie/gomega`: typed matcher builder.
 - `goselfie/gomega/failuremessage`: content-type-specific Gomega failure providers.
 - `goselfie/lens`: typed projections and YAML serialization.
-- `goselfie/lens/yaml`: YAML value transformers.
+- `goselfie/lens/yaml`: depth-first YAML value transformers (`Remove`, `Mask`, `IgnoreOrder`, `Combine`).
 - `goselfie/lens/yaml/k8s`: default normalization for Kubernetes resources.
 - `goselfie/snapshot`: snapshot data and update-mode types.
 - `goselfie/snapshot/content`: content type enum and prioritized matchers.
